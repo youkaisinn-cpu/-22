@@ -21,6 +21,21 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;ma
 .empty{color:#9aa3b3;font-size:14px;padding:7px}
 .controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:white}.btn:disabled{opacity:.42;cursor:not-allowed}.btn.grow{flex:1}
 .feedback{min-height:26px;font-weight:700;margin:12px 2px 2px}.good{color:var(--good)}.bad{color:var(--bad)}.answer{background:#f2fbf5;border:1px solid #c5e8d1;border-radius:11px;padding:12px;margin-top:10px;display:none}.answer strong{display:block;margin-bottom:3px}
+[hidden]{display:none!important}
+.hdr-r{display:flex;align-items:center;gap:10px}.btn.small{padding:6px 10px;font-size:13px}
+.reviewing #game,.reviewing #finish,.spelling #game,.spelling #finish,.memoing #game,.memoing #finish{display:none!important}
+.gloss span{flex:1}.star{border:0;background:none;cursor:pointer;font-size:22px;line-height:1;color:#b8bfcc;padding:0 4px}.star.on{color:#e0a100}
+.speakrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}.speakrow label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.pen{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;color:var(--muted);padding:0 4px}
+.spellrow{display:flex;align-items:center;gap:6px;margin:12px 0 6px;font-size:24px;font-weight:750}
+.spellrow .first{background:var(--accent-soft);border:1px solid #aeb8ff;color:#293aa8;border-radius:10px;padding:6px 12px;min-width:2.2ch;text-align:center}
+.spellrow input{flex:1;min-width:0;font:inherit;font-size:22px;padding:8px 12px;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}.spellrow input:focus{outline:none;border-color:var(--accent)}
+.accents{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.accents .btn{font-size:16px;padding:6px 14px}
+.ritem{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}.ritem:first-child{border-top:0}
+.ritem .w{font-weight:750;color:var(--accent)}.ritem .ex{color:var(--muted);font-size:12px;margin-top:2px}
+.answer .gloss{display:grid;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #c5e8d1;font-size:14px}.gloss:empty{display:none}
+.gloss div{display:flex;gap:10px;align-items:baseline}.gloss b{flex:0 0 112px;color:var(--accent)}.gloss span{color:var(--ink)}
+.btn.warn{color:var(--bad)}
 footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin-top:18px}
 #finish{display:none;text-align:center;padding:25px 16px}#finish h2{margin:0 0 8px}
 @media(max-width:480px){main{padding:15px 12px 30px}.panel{padding:13px}.word{font-size:15px;padding:9px 10px}.controls .btn{flex:1}}
@@ -28,10 +43,17 @@ footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);fo
 </head>
 <body>
 <main>
-<header><div><h1>イタリア語作文ゲーム</h1><div class="sub">日本語を見て、単語を正しい順番に並べよう</div></div><div class="sub" id="score">正解 0 / 27</div></header>
-<section class="panel" id="test-memo">
-  <div class="topline"><span>テストメモ</span></div>
-  <p style="margin:0">sapere：テストに出る</p>
+<header><div><h1>イタリア語作文ゲーム</h1><div class="sub">日本語を見て、単語を正しい順番に並べよう</div></div><div class="hdr-r"><div class="sub" id="score">正解 0 / 27</div><button class="btn small" id="memoBtn" type="button">📝 テストメモ</button><button class="btn small" id="reviewBtn" type="button">★ 復習 0</button></div></header>
+<section class="panel" id="testMemo" hidden><div class="topline"><span>📝 テストメモ</span><span class="sub">この端末に保存</span></div><div class="instructions">テストに出る内容や覚えておきたいことを記録できます。</div><textarea id="testMemoText" rows="5" style="width:100%;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical" aria-label="テストメモ"></textarea><div class="controls"><button class="btn primary grow" id="memoSave" type="button">保存</button><button class="btn" id="memoClose" type="button">閉じる</button></div><div class="sub" id="memoStatus" aria-live="polite"></div></section>
+<section class="panel" id="review" hidden><div class="topline"><span>★ 復習リスト</span></div><div id="reviewList"></div><div class="controls"><button class="btn primary grow" id="reviewSpell" type="button">✍ スペル練習</button><button class="btn" id="reviewClose" type="button">閉じる</button><button class="btn warn" id="reviewClear" type="button">すべて削除</button></div></section>
+<section class="panel" id="spell" hidden>
+  <div class="topline"><span>✍ スペル練習</span><span id="spellCount"></span></div>
+  <div class="instructions">日本語の意味を見て、頭文字の続きを入力しよう（アクセント記号は無視して判定）。</div>
+  <div class="prompt" id="spellMeaning"></div>
+  <div class="spellrow"><span class="first" id="spellFirst"></span><input id="spellInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" lang="it" placeholder="続きを入力"></div>
+  <div class="accents" id="accents"></div>
+  <div class="feedback" id="spellFeedback" aria-live="polite"></div><div class="sub" id="spellNote"></div>
+  <div class="controls"><button class="btn primary grow" id="spellCheck" type="button">答え合わせ</button><button class="btn" id="spellHint" type="button">ヒント</button><button class="btn" id="spellGiveup" type="button">わからない</button><button class="btn primary grow" id="spellNext" type="button" hidden>次へ →</button><button class="btn" id="spellSpeak" type="button">🔊 発音</button><button class="btn" id="spellExit" type="button">終了</button></div>
 </section>
 <section id="game">
   <div class="topline"><span id="chapter">練習 5.1</span><span id="counter">第1問 / 27問</span></div>
@@ -40,8 +62,9 @@ footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);fo
   <section class="panel"><div class="topline"><span>回答スペース</span><span class="sub">置いた単語をタップすると戻せる</span></div><div class="zone" id="zone"><span class="empty">ここに単語を並べよう</span></div></section>
   <section class="panel"><div class="topline"><span>単語カード</span><span class="sub">順番は毎回シャッフル</span></div><div class="words" id="bank"></div>
     <div class="controls"><button class="btn primary grow" id="check">答え合わせ</button><button class="btn" id="hint">ヒント</button><button class="btn" id="reset">やり直す</button></div>
+    <div class="controls" id="rowSub"><button class="btn warn grow" id="giveup">あきらめる（答えを見る）</button><button class="btn grow" id="skip">スキップ →</button></div>
     <div class="feedback" id="feedback" aria-live="polite">まずは単語を並べてみよう。</div>
-    <div class="answer" id="answer"><strong>正解</strong><span id="answerText"></span></div>
+    <div class="answer" id="answer"><strong id="answerTitle">正解</strong><span id="answerText"></span><div class="speakrow"><button class="btn small" id="speak" type="button">🔊 発音を聞く</button><button class="btn small" id="speakSlow" type="button">🐢 ゆっくり</button><label><input type="checkbox" id="autoSpeak">答えが出たら自動で読み上げ</label><span id="speakNote"></span></div><div class="gloss" id="gloss"></div></div>
     <div class="controls"><button class="btn primary grow" id="next" hidden>次の問題へ →</button></div>
   </section>
 </section>
@@ -53,52 +76,155 @@ footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);fo
 'use strict';
 const questions=[
 ['5.1','私はバレーボールが好きです。','Mi piace la pallavolo.'],
-['5.1','コーヒー好きですか？ — いいえ、あまり好きじゃないです。','Ti piace il caffè? — No, non mi piace molto.'],
+['5.1','コーヒー好きですか？ いいえ、あまり好きじゃないです。','Ti piace il caffè? No, non mi piace molto.'],
 ['5.1','私は紅茶が大好きですが、シルビアはあまり好きじゃないです。','Mi piace molto il tè, ma a Silvia non piace molto.'],
 ['5.2','私はトマトが大好きです。','Mi piacciono molto i pomodori.'],
-['5.2','ナスは好きですか？ — いいえ、あまり好きじゃないです。','Ti piacciono le melanzane? — No, non mi piacciono molto.'],
+['5.2','ナスは好きですか？ いいえ、あまり好きじゃないです。','Ti piacciono le melanzane? No, non mi piacciono molto.'],
 ['5.2','フランチェスカはスパゲッティがあまり好きではないです。','A Francesca non piacciono molto gli spaghetti.'],
 ['5.3','私は勉強するのが好きです。アンナは勉強するのが好きじゃないです。','Mi piace studiare. Ad Anna non piace studiare.'],
-['5.3','フランチェスコは野球をするのは好きですが、勉強するのは好きじゃないです。','A Francesco piace giocare a baseball, ma non gli piace studiare.'],
-['5.3','イタリア語を勉強するのは好きですか？ — はい、とても。',"Ti piace studiare l'italiano? — Sì, molto."],
-['5.4','このチーズ知ってますか？ — はい、とてもおいしいです。','Conosci questo formaggio? — Sì, è molto buono.'],
-['5.4','このハムは知りません。どんなですか？ — あまりおいしくないです。',"Non conosco questo prosciutto. Com'è? — Non è molto buono."],
-['6.2','ふだん何時に起きますか？ — 7時半に起きます。','A che ora ti alzi di solito? — Mi alzo alle sette e mezza.'],
+['5.3','フランチェスコは野球をするのは好きですが、勉強するのは好きじゃないです。','A Francesco piace giocare a baseball, ma non gli piace studiare.',{gli:'彼に（a lui）'}],
+['5.3','イタリア語を勉強するのは好きですか？ はい、とても。',"Ti piace studiare l'italiano? Sì, molto."],
+['5.4','このチーズ知ってますか？ はい、とてもおいしいです。','Conosci questo formaggio? Sì, è molto buono.'],
+['5.4','このハムは知りません。どんなですか？ あまりおいしくないです。',"Non conosco questo prosciutto. Com'è? Non è molto buono."],
+['6.2','ふだん何時に起きますか？ 7時半に起きます。','A che ora ti alzi di solito? Mi alzo alle sette e mezza.'],
 ['6.2','私はふだん7時に起きますが、明日は5時に起きます。','Di solito mi alzo alle sette, ma domani mi alzo alle cinque.'],
 ['6.2','私はいつも10時に起きます。','Mi alzo sempre alle dieci.'],
 ['6.2','アントニオはいつも8時に起きます。','Antonio si alza sempre alle otto.'],
-['6.3','どこに行くの？ — シルビアの家に行きます。','Dove vai? — Vado da Silvia.'],
+['6.3','どこに行くの？ シルビアの家に行きます。','Dove vai? Vado da Silvia.'],
 ['6.3','私は7時に仕事に行きます。','Vado al lavoro alle sette.'],
 ['6.3','ラウラは学校に行きます。マルコは仕事に行きます。','Laura va a scuola. Marco va al lavoro.'],
 ['6.3','アントネッラはふだん6時に起きて7時に学校に行きます。','Antonella di solito si alza alle sei e va a scuola alle sette.'],
 ['6.4','私は市場にトマトを買いに行きます。','Vado al mercato a comprare i pomodori.'],
-['6.4','私はアイスを食べに行きます。 — 私も！','Vado a mangiare un gelato. — Anch’io!'],
+['6.4','私はアイスを食べに行きます。 私も！','Vado a mangiare un gelato. Anch’io!'],
 ['6.4','ジョバンニは図書館に勉強しに行きます。','Giovanni va in biblioteca a studiare.'],
-['6.4','バールにケーキを食べに行こうか？','Andiamo al bar a mangiare una torta?'],
-['6.5','いつもどうやって学校に来ているの？ — 車で来ます。','Come vieni a scuola? — Vengo in macchina.'],
-['6.5','ビール飲みに行くけど、あなたも来る？ — 私も行きます。','Vado a bere una birra, vieni anche tu? — Sì, vengo anch’io.'],
+['6.4','バールにパスタを食べに行こうか？','Andiamo al bar a mangiare la pasta?'],
+['6.5','いつもどうやって学校に来ているの？ 車で来ます。','Come vieni a scuola? Vengo in macchina.'],
+['6.5','ビール飲みに行くけど、あなたも来る？ 私も行きます。','Vado a bere una birra, vieni anche tu? Sì, vengo anch’io.'],
 ['6.5','私はローマに列車で行きます。','Vado a Roma in treno.'],
-['6.5','大学に歩いて来ているんですか？ — いいえ、スクーターで来ています。','Vieni all’università a piedi? — No, vengo in motorino.']
+['6.5','大学に歩いて来ているんですか？ いいえ、スクーターで来ています。','Vieni all’università a piedi? No, vengo in motorino.']
 ];
-const el=id=>document.getElementById(id);let index=0,score=0,placed=[],bank=[],locked=false,dragId=null,dragStart=null;
+const GLOSS={
+"mi":"私に／私を（再帰）","ti":"あなたに／あなたを（再帰）","si":"彼・彼女自身を（再帰）","gli":"定冠詞（男性複数）",
+"piace":"気に入る・好まれる（単数）","piacciono":"気に入る・好まれる（複数）",
+"la":"定冠詞（女性単数）","il":"定冠詞（男性単数）","i":"定冠詞（男性複数）","le":"定冠詞（女性複数）","un":"不定冠詞（男性）","una":"不定冠詞（女性）",
+"pallavolo":"バレーボール","caffè":"コーヒー","no":"いいえ","non":"〜ない（否定）","molto":"とても・たくさん","tè":"紅茶","ma":"しかし",
+"a":"〜に・〜へ・〜しに（前置詞）","ad":"〜に（a の変形）","silvia":"シルビア（人名）","pomodori":"トマト（複数）","melanzane":"ナス（複数）",
+"francesca":"フランチェスカ（人名）","spaghetti":"スパゲッティ","studiare":"勉強する","anna":"アンナ（人名）","francesco":"フランチェスコ（人名）",
+"giocare":"遊ぶ・（スポーツを）する","baseball":"野球","l'italiano":"イタリア語（l' ＝ 定冠詞）","sì":"はい",
+"conosci":"知っている（あなた）","conosco":"知っている（私）","questo":"この","formaggio":"チーズ","è":"〜です・〜である","buono":"おいしい・良い",
+"prosciutto":"ハム","com'è":"どんなですか（come è）","che":"何の","ora":"時間","alzi":"起きる（あなた）","alzo":"起きる（私）","alza":"起きる（彼・彼女）",
+"di":"〜の（di solito ＝ ふだん）","solito":"習慣（di solito ＝ ふだん）","alle":"〜時に（a + le）","sette":"7","e":"そして・と","mezza":"半（30分）",
+"domani":"明日","cinque":"5","sempre":"いつも","dieci":"10","antonio":"アントニオ（人名）","otto":"8","dove":"どこ","vai":"行く（あなた）","vado":"行く（私）",
+"da":"〜の家へ・〜のところへ","al":"〜に（a + il）","lavoro":"仕事","va":"行く（彼・彼女）","scuola":"学校","laura":"ラウラ（人名）","marco":"マルコ（人名）",
+"antonella":"アントネッラ（人名）","sei":"6","mercato":"市場","comprare":"買う","mangiare":"食べる","gelato":"アイス・ジェラート","anch'io":"私も",
+"giovanni":"ジョバンニ（人名）","in":"〜で・〜に（in macchina ＝ 車で）","biblioteca":"図書館","andiamo":"行こう・行く（私たち）","bar":"バール（カフェ）",
+"pasta":"パスタ","come":"どうやって","vieni":"来る（あなた）","vengo":"来る（私）","macchina":"車","bere":"飲む","birra":"ビール","anche":"〜も","tu":"あなた",
+"roma":"ローマ","treno":"列車","all'università":"大学に（a + l'）","piedi":"足（a piedi ＝ 徒歩で）","motorino":"スクーター"
+};
+let review={};try{review=JSON.parse(localStorage.getItem('itaReview')||'{}')||{};}catch(e){review={};}
+const el=id=>document.getElementById(id);let index=0,score=0,gaveUp=0,skipped=0,placed=[],bank=[],locked=false,dragId=null,dragStart=null;
 const tokens=()=>questions[index][2].split(/\s+/);
 const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 function render(){
  const z=el('zone'),b=el('bank');z.innerHTML='';b.innerHTML='';
  if(!placed.length){const p=document.createElement('span');p.className='empty';p.textContent='ここに単語を並べよう';z.append(p);}
- placed.forEach((w,i)=>{const x=makeWord(w,true);x.addEventListener('click',()=>{if(locked)return;placed.splice(i,1);bank.push(w);render();});z.append(x);});
+ placed.forEach(w=>{z.append(makeWord(w,true));});
  bank.forEach(w=>b.append(makeWord(w,false)));
  el('score').textContent=`正解 ${score} / ${questions.length}`;
 }
-function makeWord(w,isPlaced){const x=document.createElement('button');x.type='button';x.className='word'+(isPlaced?' placed':'');x.textContent=w.text;x.draggable=false;x.addEventListener('pointerdown',e=>{if(locked)return;dragId=w.id;dragStart={x:e.clientX,y:e.clientY,from:isPlaced};x.setPointerCapture?.(e.pointerId);});x.addEventListener('pointerup',e=>{if(dragId!==w.id)return;const target=document.elementFromPoint(e.clientX,e.clientY);if(isPlaced){if(target===x||x.contains(target)){}else{const k=placed.findIndex(a=>a.id===w.id);if(k>=0){placed.splice(k,1);bank.push(w);}}}else{const rect=el('zone').getBoundingClientRect();const dropped=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;const moved=Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)>8;if(dropped||!moved){const k=bank.findIndex(a=>a.id===w.id);if(k>=0){bank.splice(k,1);placed.push(w);}}}dragId=null;dragStart=null;render();});return x;}
-function start(){locked=false;placed=[];bank=shuffle(tokens().map((text,id)=>({id,text})));el('chapter').textContent='練習 '+questions[index][0];el('counter').textContent=`第${index+1}問 / ${questions.length}問`;el('prompt').textContent=questions[index][1];el('progress').style.width=(index/questions.length*100)+'%';el('feedback').textContent='まずは単語を並べてみよう。';el('feedback').className='feedback';el('answer').style.display='none';el('next').hidden=true;el('check').disabled=false;el('hint').disabled=false;el('reset').disabled=false;render();}
-function check(){if(locked)return;if(placed.length!==tokens().length){message('まだ単語が残っているよ。','bad');return;}const ok=placed.every((w,i)=>w.text===tokens()[i]);if(!ok){message('惜しい！語順をもう一度確認してみよう。','bad');return;}locked=true;score++;message('正解！ Perfetto!','good');el('answerText').textContent=questions[index][2];el('answer').style.display='block';el('check').disabled=true;el('hint').disabled=true;el('reset').disabled=true;el('next').hidden=false;el('next').textContent=index===questions.length-1?'結果を見る →':'次の問題へ →';render();}
+function makeWord(w,isPlaced){const x=document.createElement('button');x.type='button';x.className='word'+(isPlaced?' placed':'');x.textContent=w.text;x.draggable=false;x.addEventListener('pointerdown',e=>{if(locked)return;dragId=w.id;dragStart={x:e.clientX,y:e.clientY,from:isPlaced};x.setPointerCapture?.(e.pointerId);});x.addEventListener('pointerup',e=>{if(dragId!==w.id)return;const target=document.elementFromPoint(e.clientX,e.clientY);if(isPlaced){const zr=el('zone').getBoundingClientRect();const moved=Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)>8;const outside=e.clientX<zr.left||e.clientX>zr.right||e.clientY<zr.top||e.clientY>zr.bottom;if(!moved||outside){const k=placed.findIndex(a=>a.id===w.id);if(k>=0){placed.splice(k,1);bank.push(w);}}}else{const rect=el('zone').getBoundingClientRect();const dropped=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;const moved=Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)>8;if(dropped||!moved){const k=bank.findIndex(a=>a.id===w.id);if(k>=0){bank.splice(k,1);placed.push(w);}}}dragId=null;dragStart=null;render();});return x;}
+function start(){try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}locked=false;placed=[];bank=shuffle(tokens().map((text,id)=>({id,text})));el('chapter').textContent='練習 '+questions[index][0];el('counter').textContent=`第${index+1}問 / ${questions.length}問`;el('prompt').textContent=questions[index][1];el('progress').style.width=(index/questions.length*100)+'%';el('feedback').textContent='まずは単語を並べてみよう。';el('feedback').className='feedback';el('answer').style.display='none';el('gloss').innerHTML='';el('rowSub').hidden=false;el('next').hidden=true;el('check').disabled=false;el('hint').disabled=false;el('reset').disabled=false;render();}
+function check(){if(locked)return;if(placed.length!==tokens().length){message('まだ単語が残っているよ。','bad');return;}const ok=placed.every((w,i)=>w.text===tokens()[i]);if(!ok){message('惜しい！語順をもう一度確認してみよう。','bad');return;}locked=true;score++;message('正解！ Perfetto!','good');showAnswer('正解',true);lockUI();render();}
+function lockUI(){el('check').disabled=true;el('hint').disabled=true;el('reset').disabled=true;el('rowSub').hidden=true;el('next').hidden=false;el('next').textContent=index===questions.length-1?'結果を見る →':'次の問題へ →';}
+function showAnswer(title,withGloss){
+ el('answerTitle').textContent=title;el('answerText').textContent=questions[index][2];
+ const g=el('gloss');g.innerHTML='';
+ if(withGloss){const seen=new Set(),over=questions[index][3]||{};
+  tokens().forEach(t=>{const word=t.replace(/[.,?!;:]/g,''),key=word.toLowerCase().replace(/’/g,"'");if(seen.has(key))return;seen.add(key);
+   const row=document.createElement('div'),b=document.createElement('b'),m=document.createElement('span');b.textContent=word;m.textContent=over[key]||GLOSS[key]||'（意味未登録）';
+   const st=document.createElement('button');st.type='button';st.dataset.key=key;st.title='あとで復習する';st.setAttribute('aria-label','復習リストに追加');setStar(st,isMarked(key));
+   st.addEventListener('click',()=>{toggleMark(key,word,m.textContent,questions[index][2]);setStar(st,isMarked(key));});
+   const pen=document.createElement('button');pen.type='button';pen.className='pen';pen.textContent='✍';pen.title='この単語のスペル練習';pen.setAttribute('aria-label','この単語のスペル練習');
+   pen.addEventListener('click',()=>startSpell([{key,meaning:m.textContent}],'game'));
+   row.append(b,m,pen,st);g.append(row);});}
+ el('answer').style.display='block';el('speakNote').textContent='';if(el('autoSpeak').checked)speak(questions[index][2],0.9,el('speakNote'));
+}
+function giveup(){if(locked)return;locked=true;gaveUp++;placed=tokens().map((text,id)=>({id,text}));bank=[];message('あきらめた。答えと単語の意味を確認しよう。','');showAnswer('答え',true);lockUI();render();}
 function message(t,c){el('feedback').textContent=t;el('feedback').className='feedback '+c;}
 function hint(){if(locked||bank.length===0)return;const expected=tokens()[placed.length];const k=bank.findIndex(w=>w.text===expected);if(k>=0){placed.push(bank.splice(k,1)[0]);message('ヒント：次の単語を置いたよ。','');render();}}
 function reset(){if(locked)return;placed=[];bank=shuffle(tokens().map((text,id)=>({id,text})));message('並べ直そう。','');render();}
-function next(){if(!locked)return;if(index===questions.length-1){el('game').style.display='none';el('finish').style.display='block';el('result').textContent=`正解数：${score} / ${questions.length}`;el('progress').style.width='100%';return;}index++;start();}
-function again(){index=0;score=0;el('finish').style.display='none';el('game').style.display='block';start();}
-el('check').addEventListener('click',check);el('hint').addEventListener('click',hint);el('reset').addEventListener('click',reset);el('next').addEventListener('click',next);el('again').addEventListener('click',again);start();
+function saveReview(){try{localStorage.setItem('itaReview',JSON.stringify(review));}catch(e){}}
+function isMarked(k){return !!review[k];}
+function setStar(st,on){st.className='star'+(on?' on':'');st.textContent=on?'★':'☆';}
+function syncStars(){document.querySelectorAll('#gloss .star').forEach(st=>setStar(st,isMarked(st.dataset.key)));}
+function toggleMark(k,word,meaning,ex){if(review[k])delete review[k];else review[k]={word,meaning,ex,t:Date.now()};saveReview();updateReviewCount();}
+function updateReviewCount(){el('reviewBtn').textContent='★ 復習 '+Object.keys(review).length;}
+function renderReview(){
+ const list=el('reviewList');list.innerHTML='';
+ const items=Object.entries(review).sort((a,b)=>(b[1].t||0)-(a[1].t||0));el('reviewSpell').disabled=!items.length;
+ if(!items.length){const p=document.createElement('div');p.className='empty';p.textContent='まだありません。答えが表示されたあと、単語の右の☆を押すと追加できます。';list.append(p);return;}
+ items.forEach(([k,v])=>{const row=document.createElement('div');row.className='ritem';const main=document.createElement('div'),top=document.createElement('div'),w=document.createElement('b'),m=document.createElement('span'),ex=document.createElement('div');
+  w.className='w';w.textContent=v.word;m.textContent='　'+v.meaning;top.append(w,m);ex.className='ex';ex.textContent=v.ex||'';main.append(top,ex);
+  const del=document.createElement('button');del.type='button';del.className='btn small';del.textContent='削除';del.addEventListener('click',()=>{delete review[k];saveReview();updateReviewCount();renderReview();});
+  row.append(main,del);list.append(row);});
+}
+function openReview(){renderReview();el('spell').hidden=true;document.body.classList.remove('spelling');el('review').hidden=false;document.body.classList.add('reviewing');}
+function closeReview(){el('review').hidden=true;document.body.classList.remove('reviewing');syncStars();}
+function speak(text,rate,note){
+ const ss=window.speechSynthesis;if(note)note.textContent='';
+ if(!ss||typeof SpeechSynthesisUtterance==='undefined'){if(note)note.textContent='この端末は音声読み上げに対応していません。';return;}
+ ss.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='it-IT';u.rate=rate||0.9;
+ const vs=ss.getVoices(),v=vs.find(x=>/^it([-_]|$)/i.test(x.lang));
+ if(v)u.voice=v;else if(vs.length&&note)note.textContent='イタリア語の音声が見つかりません（端末の設定で追加できます）。';
+ ss.speak(u);
+}
+const spell={queue:[],i:0,from:'game',locked:false,hint:0};
+const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+const norm=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’‘`´]/g,"'").toLowerCase().replace(/\s+/g,'');
+const spellTarget=it=>/人名/.test(it.meaning)?cap(it.key):it.key;
+function spellMsg(t,c){el('spellFeedback').textContent=t;el('spellFeedback').className='feedback '+(c||'');}
+function startSpell(items,from){if(!items.length)return;spell.queue=items;spell.i=0;spell.from=from;el('review').hidden=true;document.body.classList.remove('reviewing');document.body.classList.add('spelling');el('spell').hidden=false;showSpell();}
+function showSpell(){
+ const it=spell.queue[spell.i],t=spellTarget(it),inp=el('spellInput');spell.locked=false;spell.hint=0;
+ el('spellCount').textContent=`${spell.i+1} / ${spell.queue.length}`;el('spellMeaning').textContent=it.meaning;spellPrefix();
+ inp.value='';inp.disabled=false;spellMsg('','');el('spellNote').textContent='';
+ el('spellCheck').hidden=false;el('spellHint').hidden=false;el('spellGiveup').hidden=false;el('spellNext').hidden=true;inp.focus();
+}
+function spellPrefix(){const t=spellTarget(spell.queue[spell.i]);el('spellFirst').textContent=t.slice(0,1+spell.hint);el('spellHint').disabled=1+spell.hint>=t.length-1;}
+function hintSpell(){if(spell.locked)return;const t=spellTarget(spell.queue[spell.i]);if(1+spell.hint>=t.length-1)return;spell.hint++;spellPrefix();spellMsg('ヒント：次の1文字を表示したよ。','');el('spellInput').focus();}
+function lockSpell(){spell.locked=true;el('spellInput').disabled=true;el('spellCheck').hidden=true;el('spellHint').hidden=true;el('spellGiveup').hidden=true;el('spellNext').hidden=false;el('spellNext').textContent=spell.i===spell.queue.length-1?'終了':'次へ →';}
+function checkSpell(){
+ if(spell.locked)return;const t=spellTarget(spell.queue[spell.i]),typed=el('spellInput').value.trim();
+ if(!typed){spellMsg('続きを入力しよう。','bad');return;}
+ if([...Array(2+spell.hint).keys()].some(k=>norm(typed)===norm(t.slice(k)))){spellMsg('正解！ '+t,'good');lockSpell();}else spellMsg('惜しい！もう一度。','bad');
+}
+function giveupSpell(){if(spell.locked)return;spellMsg('答え：'+spellTarget(spell.queue[spell.i]),'');lockSpell();}
+function nextSpell(){if(!spell.locked)return;spell.i++;if(spell.i>=spell.queue.length)exitSpell();else showSpell();}
+function exitSpell(){el('spell').hidden=true;document.body.classList.remove('spelling');try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}if(spell.from==='review')openReview();}
+function advance(){if(index===questions.length-1){el('game').style.display='none';el('finish').style.display='block';el('result').textContent=`正解 ${score} / ${questions.length}（あきらめ ${gaveUp}・スキップ ${skipped}）`;el('progress').style.width='100%';return;}index++;start();}
+function next(){if(!locked)return;advance();}
+function skip(){if(locked)return;skipped++;advance();}
+function again(){index=0;score=0;gaveUp=0;skipped=0;el('finish').style.display='none';el('game').style.display='block';start();}
+el('check').addEventListener('click',check);el('hint').addEventListener('click',hint);el('reset').addEventListener('click',reset);el('next').addEventListener('click',next);el('giveup').addEventListener('click',giveup);el('skip').addEventListener('click',skip);el('again').addEventListener('click',again);
+el('reviewBtn').addEventListener('click',()=>{el('review').hidden?openReview():closeReview();});el('reviewClose').addEventListener('click',closeReview);
+el('reviewClear').addEventListener('click',()=>{if(Object.keys(review).length&&confirm('復習リストをすべて削除しますか？')){review={};saveReview();updateReviewCount();renderReview();}});
+el('reviewSpell').addEventListener('click',()=>{const keys=Object.keys(review);startSpell(shuffle(keys).map(k=>({key:k,meaning:review[k].meaning})),'review');});
+el('speak').addEventListener('click',()=>speak(questions[index][2],0.9,el('speakNote')));el('speakSlow').addEventListener('click',()=>speak(questions[index][2],0.55,el('speakNote')));
+try{el('autoSpeak').checked=localStorage.getItem('itaAuto')==='1';}catch(e){}
+el('autoSpeak').addEventListener('change',()=>{try{localStorage.setItem('itaAuto',el('autoSpeak').checked?'1':'0');}catch(e){}});
+el('spellCheck').addEventListener('click',checkSpell);el('spellHint').addEventListener('click',hintSpell);el('spellGiveup').addEventListener('click',giveupSpell);el('spellNext').addEventListener('click',nextSpell);el('spellExit').addEventListener('click',exitSpell);
+el('spellSpeak').addEventListener('click',()=>speak(spellTarget(spell.queue[spell.i]),0.8,el('spellNote')));
+['à','è','é','ì','ò','ù'].forEach(ch=>{const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=ch;b.addEventListener('click',()=>{const i=el('spellInput');if(i.disabled)return;i.setRangeText(ch,i.selectionStart,i.selectionEnd,'end');i.focus();});el('accents').append(b);});
+document.addEventListener('keydown',e=>{if(el('spell').hidden||e.key!=='Enter'||e.isComposing||e.keyCode===229||(e.target.tagName==='BUTTON'))return;e.preventDefault();spell.locked?nextSpell():checkSpell();});
+// テストメモ：初期メモを用意し、編集内容はこの端末のブラウザに保存する
+const defaultTestMemo='・sapere がテストに出る';
+function loadTestMemo(){try{return localStorage.getItem('itaTestMemo') ?? defaultTestMemo;}catch(e){return defaultTestMemo;}}
+function openTestMemo(){el('testMemoText').value=loadTestMemo();el('memoStatus').textContent='';el('testMemo').hidden=false;el('review').hidden=true;el('spell').hidden=true;document.body.classList.remove('reviewing','spelling');document.body.classList.add('memoing');}
+function closeTestMemo(){el('testMemo').hidden=true;document.body.classList.remove('memoing');}
+el('memoBtn').addEventListener('click',()=>{if(el('testMemo').hidden)openTestMemo();else closeTestMemo();});
+el('memoClose').addEventListener('click',closeTestMemo);
+el('memoSave').addEventListener('click',()=>{try{localStorage.setItem('itaTestMemo',el('testMemoText').value);el('memoStatus').textContent='保存しました。';}catch(e){el('memoStatus').textContent='保存できませんでした。';}});
+updateReviewCount();start();
 })();
 </script>
 </body>
