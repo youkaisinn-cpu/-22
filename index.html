@@ -57,6 +57,11 @@ footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);fo
 #homeScreen .home-foot{margin-top:20px;color:#697386;font-size:12px}
 
 
+.match-modes{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+.match-modes .btn{flex:1}
+#matchSpellPanel .spellrow{margin:18px 0 10px}
+#matchSpellPanel .spellrow input{font-size:20px}
+#matchSpellFinish{text-align:center;padding:18px 8px}
 /* 小テスト③ マッチングゲーム */
 body.matching main>header,body.matching footer{display:none}\n#matchGame{max-width:760px;margin:0 auto;padding:18px 16px 36px}
 .match-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -131,6 +136,11 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
     <div><h1 class="match-title">小テスト③</h1><div class="sub">英語と日本語の正しい組み合わせを見つけよう</div></div>
     <button class="btn small" id="matchHome" type="button">⌂ ホーム</button>
   </div>
+  <div class="match-modes">
+    <button class="btn primary" id="matchModePair" type="button" aria-pressed="true">🔗 ペアを選ぶ</button>
+    <button class="btn" id="matchModeSpell" type="button" aria-pressed="false">✍ スペルを入力</button>
+  </div>
+  <div id="matchPairPanel">
   <div class="match-stats">
     <span class="match-stat" id="matchProgress">正解 0 / 10</span>
     <span class="match-stat" id="matchAttempts">挑戦 0回</span>
@@ -151,6 +161,27 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
     <h2>全問正解！🎉</h2>
     <p id="matchResultText"></p>
     <div class="match-actions"><button class="btn primary" id="matchAgain" type="button">もう一度プレイ</button><button class="btn" id="matchResultHome" type="button">ホームへ戻る</button></div>
+  </section>
+  </div>
+  <section id="matchSpellPanel" class="panel" hidden>
+    <div class="topline"><span>✍ スペル入力</span><span id="matchSpellCount">1 / 10</span></div>
+    <div class="progress"><div class="bar" id="matchSpellBar"></div></div>
+    <p class="match-instruction">日本語の意味を見て、表示された最初の文字に続けてスペルを入力しよう。</p>
+    <div class="prompt" id="matchSpellMeaning"></div>
+    <div class="spellrow"><span class="first" id="matchSpellFirst"></span><input id="matchSpellInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="残りのスペルを入力" aria-label="残りのスペル"></div>
+    <div class="match-feedback" id="matchSpellFeedback" aria-live="polite">入力したら答え合わせを押そう。</div>
+    <div class="match-actions">
+      <button class="btn primary" id="matchSpellCheck" type="button">答え合わせ</button>
+      <button class="btn" id="matchSpellHint" type="button">ヒント</button>
+      <button class="btn" id="matchSpellAnswer" type="button">答えを見る</button>
+      <button class="btn primary" id="matchSpellNext" type="button" hidden>次へ →</button>
+    </div>
+    <div class="sub" id="matchSpellNote"></div>
+    <div class="match-actions"><button class="btn" id="matchSpellRestart" type="button">最初から</button></div>
+    <div id="matchSpellFinish" hidden>
+      <h2>スペル練習終了！🎉</h2><p id="matchSpellResult"></p>
+      <button class="btn primary" id="matchSpellAgain" type="button">もう一度</button>
+    </div>
   </section>
 </section>
 
@@ -385,6 +416,76 @@ function matchChoose(i,side){
   }
  }
 }
+
+// 小テスト③：意味を見て、最初の1文字以外を入力するスペル練習
+let matchSpellOrder=[],matchSpellIndex=0,matchSpellHints=0,matchSpellLocked=false,matchSpellCorrect=0;
+function matchSpellStart(){
+ matchSpellOrder=matchShuffleArray(matchPairs.map((_,i)=>i));matchSpellIndex=0;matchSpellHints=0;matchSpellLocked=false;matchSpellCorrect=0;
+ el('matchSpellFinish').hidden=true;el('matchSpellMeaning').hidden=false;el('matchSpellFirst').parentElement.hidden=false;
+ el('matchSpellInput').hidden=false;el('matchSpellFeedback').hidden=false;el('matchSpellNote').textContent='';
+ el('matchSpellCheck').hidden=false;el('matchSpellHint').hidden=false;el('matchSpellAnswer').hidden=false;el('matchSpellNext').hidden=true;
+ matchSpellShow();
+}
+function matchSpellShow(){
+ const i=matchSpellOrder[matchSpellIndex],word=matchPairs[i][0];
+ matchSpellHints=0;matchSpellLocked=false;
+ el('matchSpellCount').textContent=(matchSpellIndex+1)+' / '+matchSpellOrder.length;
+ el('matchSpellBar').style.width=(matchSpellIndex/matchSpellOrder.length*100)+'%';
+ el('matchSpellMeaning').textContent=matchPairs[i][1];
+ el('matchSpellFirst').textContent=word.slice(0,1);
+ el('matchSpellInput').value='';el('matchSpellInput').disabled=false;el('matchSpellInput').focus();
+ el('matchSpellFeedback').textContent='最初の文字に続けて入力しよう。';el('matchSpellFeedback').className='match-feedback';
+ el('matchSpellNote').textContent='';
+ el('matchSpellCheck').hidden=false;el('matchSpellHint').hidden=false;el('matchSpellAnswer').hidden=false;el('matchSpellNext').hidden=true;
+}
+function matchSpellNormalize(s){return s.toLowerCase().replace(/\\s+/g,' ').trim();}
+function matchSpellRevealNext(){
+ if(matchSpellLocked)return;
+ const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
+ if(matchSpellHints>=word.length-1)return;
+ matchSpellHints++;
+ el('matchSpellFirst').textContent=word.slice(0,1+matchSpellHints);
+ if(matchSpellHints>=word.length-1)el('matchSpellHint').disabled=true;
+ el('matchSpellNote').textContent='ヒント：次の文字を表示したよ。';
+}
+function matchSpellLock(message,good){
+ matchSpellLocked=true;el('matchSpellInput').disabled=true;
+ el('matchSpellFeedback').textContent=message;el('matchSpellFeedback').className='match-feedback '+(good?'good':'bad');
+ el('matchSpellCheck').hidden=true;el('matchSpellHint').hidden=true;el('matchSpellAnswer').hidden=true;el('matchSpellNext').hidden=false;
+ el('matchSpellNext').textContent=matchSpellIndex===matchSpellOrder.length-1?'結果を見る →':'次へ →';
+}
+function matchSpellCheckAnswer(){
+ if(matchSpellLocked)return;
+ const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
+ const typed=matchSpellNormalize(el('matchSpellInput').value);
+ const expected=matchSpellNormalize(word.slice(1+matchSpellHints));
+ if(!typed){el('matchSpellFeedback').textContent='残りのスペルを入力しよう。';el('matchSpellFeedback').className='match-feedback bad';return;}
+ if(typed===expected){matchSpellCorrect++;matchSpellLock('正解！ '+word,true);}
+ else{el('matchSpellFeedback').textContent='惜しい！スペルを確認してもう一度。';el('matchSpellFeedback').className='match-feedback bad';}
+}
+function matchSpellShowAnswer(){
+ if(matchSpellLocked)return;
+ const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
+ matchSpellLock('答え：'+word,false);
+}
+function matchSpellNextQuestion(){
+ if(!matchSpellLocked)return;
+ matchSpellIndex++;
+ if(matchSpellIndex>=matchSpellOrder.length){
+  el('matchSpellBar').style.width='100%';el('matchSpellMeaning').hidden=true;el('matchSpellFirst').parentElement.hidden=true;
+  el('matchSpellInput').hidden=true;el('matchSpellFeedback').hidden=true;el('matchSpellCheck').hidden=true;el('matchSpellHint').hidden=true;el('matchSpellAnswer').hidden=true;el('matchSpellNext').hidden=true;
+  el('matchSpellCount').textContent='終了';
+  el('matchSpellResult').textContent='10問中 '+matchSpellCorrect+'問正解！';
+  el('matchSpellFinish').hidden=false;
+ }else matchSpellShow();
+}
+function matchSetMode(mode){
+ const pair=mode==='pair';
+ el('matchPairPanel').hidden=!pair;el('matchSpellPanel').hidden=pair;
+ el('matchModePair').className='btn'+(pair?' primary':'');el('matchModeSpell').className='btn'+(!pair?' primary':'');
+ el('matchModePair').setAttribute('aria-pressed',String(pair));el('matchModeSpell').setAttribute('aria-pressed',String(!pair));
+ if(!pair)matchSpellStart();
+}
 function matchOpen(){
  document.body.classList.add('matching');
  el('homeScreen').hidden=true;el('game').hidden=true;el('finish').style.display='none';
@@ -394,6 +495,15 @@ function matchOpen(){
 function matchClose(){
  document.body.classList.remove('matching');el('matchGame').hidden=true;el('homeScreen').hidden=false;el('game').hidden=false;
 }
+el('matchModePair').addEventListener('click',()=>matchSetMode('pair'));
+el('matchModeSpell').addEventListener('click',()=>matchSetMode('spell'));
+el('matchSpellCheck').addEventListener('click',matchSpellCheckAnswer);
+el('matchSpellHint').addEventListener('click',matchSpellRevealNext);
+el('matchSpellAnswer').addEventListener('click',matchSpellShowAnswer);
+el('matchSpellNext').addEventListener('click',matchSpellNextQuestion);
+el('matchSpellRestart').addEventListener('click',matchSpellStart);
+el('matchSpellAgain').addEventListener('click',matchSpellStart);
+el('matchSpellInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!matchSpellLocked)matchSpellCheckAnswer();});
 el('homeQuiz3').addEventListener('click',matchOpen);
 el('matchHome').addEventListener('click',matchClose);
 el('matchResultHome').addEventListener('click',matchClose);
