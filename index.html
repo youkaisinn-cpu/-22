@@ -438,7 +438,7 @@ function matchSpellShow(){
  el('matchSpellNote').textContent='';
  el('matchSpellCheck').hidden=false;el('matchSpellHint').hidden=false;el('matchSpellAnswer').hidden=false;el('matchSpellNext').hidden=true;
 }
-function matchSpellNormalize(s){return s.toLowerCase().replace(/\\s+/g,' ').trim();}
+function matchSpellNormalize(s){return s.toLowerCase().replace(/\s+/g,' ').trim();}
 function matchSpellRevealNext(){
  if(matchSpellLocked)return;
  const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
