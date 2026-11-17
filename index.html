@@ -166,10 +166,10 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
   <section id="matchSpellPanel" class="panel" hidden>
     <div class="topline"><span>✍ スペル入力</span><span id="matchSpellCount">1 / 10</span></div>
     <div class="progress"><div class="bar" id="matchSpellBar"></div></div>
-    <p class="match-instruction">日本語の意味を見て、表示された最初の文字に続けてスペルを入力しよう。</p>
+    <p class="match-instruction">日本語の意味を見て、空白や記号は表示された状態で、残りのアルファベットだけ入力しよう。</p>
     <div class="prompt" id="matchSpellMeaning"></div>
     <div class="match-actions"><button class="btn" id="matchSpellFavorite" type="button" aria-pressed="false">☆ お気に入り登録</button><span class="sub" id="matchSpellFavoriteCount">お気に入り 0語</span></div>
-    <div class="spellrow"><span class="first" id="matchSpellFirst"></span><input id="matchSpellInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="残りのスペルを入力" aria-label="残りのスペル"></div>
+    <div class="spellrow"><span class="first" id="matchSpellFirst"></span><input id="matchSpellInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="残りのアルファベットを入力" aria-label="残りのアルファベット"></div>
     <div class="match-feedback" id="matchSpellFeedback" aria-live="polite">入力したら答え合わせを押そう。</div>
     <div class="match-actions">
       <button class="btn primary" id="matchSpellCheck" type="button">答え合わせ</button>
@@ -434,7 +434,7 @@ function matchSpellShow(){
  el('matchSpellBar').style.width=(matchSpellIndex/matchSpellOrder.length*100)+'%';
  el('matchSpellMeaning').textContent=matchPairs[i][1];
  matchSpellUpdateFavoriteButton();
- el('matchSpellFirst').textContent=word.slice(0,1);
+ matchSpellRenderPattern(word);
  el('matchSpellInput').value='';el('matchSpellInput').disabled=false;el('matchSpellInput').focus();
  el('matchSpellFeedback').textContent='最初の文字に続けて入力しよう。';el('matchSpellFeedback').className='match-feedback';
  el('matchSpellNote').textContent='';
@@ -464,15 +464,28 @@ function matchSpellToggleFavorite(){
  matchSpellSaveFavorites(next);
  matchSpellUpdateFavoriteButton();
 }
-function matchSpellNormalize(s){return s.toLowerCase().replace(/\s+/g,' ').trim();}
+function matchSpellLetters(s){return s.toLowerCase().replace(/[^a-z]/g,'');}
+function matchSpellRenderPattern(word){
+ let letterIndex=0;
+ const pattern=Array.from(word).map((ch)=>{
+  if(/[a-z]/i.test(ch)){
+   const shown=letterIndex<=matchSpellHints;
+   letterIndex++;
+   return shown?ch:'＿';
+  }
+  return ch;
+ }).join('');
+ el('matchSpellFirst').textContent=pattern;
+}
 function matchSpellRevealNext(){
  if(matchSpellLocked)return;
  const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
- if(matchSpellHints>=word.length-1)return;
+ const total=matchSpellLetters(word).length;
+ if(matchSpellHints>=total-1)return;
  matchSpellHints++;
- el('matchSpellFirst').textContent=word.slice(0,1+matchSpellHints);
- if(matchSpellHints>=word.length-1)el('matchSpellHint').disabled=true;
- el('matchSpellNote').textContent='ヒント：次の文字を表示したよ。';
+ matchSpellRenderPattern(word);
+ if(matchSpellHints>=total-1)el('matchSpellHint').disabled=true;
+ el('matchSpellNote').textContent='ヒント：次のアルファベットを表示したよ。空白・記号はそのままでOK。';
 }
 function matchSpellLock(message,good){
  matchSpellLocked=true;el('matchSpellInput').disabled=true;
@@ -483,8 +496,8 @@ function matchSpellLock(message,good){
 function matchSpellCheckAnswer(){
  if(matchSpellLocked)return;
  const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
- const typed=matchSpellNormalize(el('matchSpellInput').value);
- const expected=matchSpellNormalize(word.slice(1+matchSpellHints));
+ const typed=matchSpellLetters(el('matchSpellInput').value);
+ const expected=matchSpellLetters(word).slice(1+matchSpellHints);
  if(!typed){el('matchSpellFeedback').textContent='残りのスペルを入力しよう。';el('matchSpellFeedback').className='match-feedback bad';return;}
  if(typed===expected){matchSpellCorrect++;matchSpellLock('正解！ '+word,true);}
  else{el('matchSpellFeedback').textContent='惜しい！スペルを確認してもう一度。';el('matchSpellFeedback').className='match-feedback bad';}
