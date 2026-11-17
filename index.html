@@ -60,7 +60,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);fo
 .match-modes{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
 .match-modes .btn{flex:1}
 #matchSpellPanel .spellrow{margin:18px 0 10px}
-#matchSpellPanel .spellrow input{font-size:20px}
+#matchSpellPanel .spellrow input{font-size:20px}.spell-words{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 10px;align-items:flex-end}.spell-word{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:8px 10px;min-width:0}.spell-word .prefix{font-size:21px;font-weight:800;color:#293aa8;background:var(--accent-soft);border-radius:7px;padding:4px 7px}.spell-word input{width:clamp(76px,22vw,150px);min-width:0;border:0;border-bottom:2px solid var(--line);border-radius:0;padding:7px 4px;font:700 20px system-ui;color:var(--ink);background:transparent;outline:none}.spell-word input:focus{border-color:var(--accent)}.spell-symbol{font-size:21px;font-weight:750;white-space:pre-wrap}.spell-word small{display:block;color:var(--muted);font-size:10px;text-align:center}
 #matchSpellFinish{text-align:center;padding:18px 8px}
 /* 小テスト③ マッチングゲーム */
 body.matching main>header,body.matching footer{display:none}\n#matchGame{max-width:760px;margin:0 auto;padding:18px 16px 36px}
@@ -166,10 +166,10 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
   <section id="matchSpellPanel" class="panel" hidden>
     <div class="topline"><span>✍ スペル入力</span><span id="matchSpellCount">1 / 10</span></div>
     <div class="progress"><div class="bar" id="matchSpellBar"></div></div>
-    <p class="match-instruction">日本語の意味を見て、空白や記号は表示された状態で、残りのアルファベットだけ入力しよう。</p>
+    <p class="match-instruction">単語ごとの入力欄に、最初の文字の続きだけ入力しよう。空白や記号は自動で表示されるよ。</p>
     <div class="prompt" id="matchSpellMeaning"></div>
     <div class="match-actions"><button class="btn" id="matchSpellFavorite" type="button" aria-pressed="false">☆ お気に入り登録</button><span class="sub" id="matchSpellFavoriteCount">お気に入り 0語</span></div>
-    <div class="spellrow"><span class="first" id="matchSpellFirst"></span><input id="matchSpellInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="残りのアルファベットを入力" aria-label="残りのアルファベット"></div>
+    <div id="matchSpellWordInputs" class="spell-words" aria-label="単語ごとのスペル入力"></div>
     <div class="match-feedback" id="matchSpellFeedback" aria-live="polite">入力したら答え合わせを押そう。</div>
     <div class="match-actions">
       <button class="btn primary" id="matchSpellCheck" type="button">答え合わせ</button>
@@ -418,12 +418,12 @@ function matchChoose(i,side){
  }
 }
 
-// 小テスト③：意味を見て、最初の1文字以外を入力するスペル練習
+// 小テスト③：単語ごとに入力欄を分けたスペル練習
 let matchSpellOrder=[],matchSpellIndex=0,matchSpellHints=0,matchSpellLocked=false,matchSpellCorrect=0;
 function matchSpellStart(){
  matchSpellOrder=matchShuffleArray(matchPairs.map((_,i)=>i));matchSpellIndex=0;matchSpellHints=0;matchSpellLocked=false;matchSpellCorrect=0;
  el('matchSpellFinish').hidden=true;el('matchSpellMeaning').hidden=false;el('matchSpellFirst').parentElement.hidden=false;
- el('matchSpellInput').hidden=false;el('matchSpellFeedback').hidden=false;el('matchSpellNote').textContent='';
+ el('matchSpellWordInputs').hidden=false;el('matchSpellFeedback').hidden=false;el('matchSpellNote').textContent='';
  el('matchSpellCheck').hidden=false;el('matchSpellHint').hidden=false;el('matchSpellAnswer').hidden=false;el('matchSpellNext').hidden=true;
  matchSpellShow();
 }
@@ -434,8 +434,8 @@ function matchSpellShow(){
  el('matchSpellBar').style.width=(matchSpellIndex/matchSpellOrder.length*100)+'%';
  el('matchSpellMeaning').textContent=matchPairs[i][1];
  matchSpellUpdateFavoriteButton();
- matchSpellRenderPattern(word);
- el('matchSpellInput').value='';el('matchSpellInput').disabled=false;el('matchSpellInput').focus();
+ matchSpellRenderWordInputs(word);
+ const firstInput=el('matchSpellWordInputs').querySelector('input');if(firstInput)firstInput.focus();
  el('matchSpellFeedback').textContent='最初の文字に続けて入力しよう。';el('matchSpellFeedback').className='match-feedback';
  el('matchSpellNote').textContent='';
  el('matchSpellCheck').hidden=false;el('matchSpellHint').hidden=false;el('matchSpellAnswer').hidden=false;el('matchSpellNext').hidden=true;
@@ -465,27 +465,40 @@ function matchSpellToggleFavorite(){
  matchSpellUpdateFavoriteButton();
 }
 function matchSpellLetters(s){return s.toLowerCase().replace(/[^a-z]/g,'');}
-function matchSpellRenderPattern(word){
- let letterIndex=0;
- const pattern=Array.from(word).map((ch)=>{
-  if(/[a-z]/i.test(ch)){
-   const shown=letterIndex<=matchSpellHints;
-   letterIndex++;
-   return shown?ch:'＿';
+function matchSpellRenderWordInputs(word){
+ const host=el('matchSpellWordInputs');host.innerHTML='';
+ const parts=word.match(/[a-z]+|[^a-z]+/gi)||[];
+ let wordIndex=0;
+ parts.forEach(part=>{
+  if(/^[a-z]+$/i.test(part)){
+   const wrap=document.createElement('div');wrap.className='spell-word';
+   const prefix=document.createElement('span');prefix.className='prefix';prefix.textContent=part[0];
+   const field=document.createElement('div');
+   const input=document.createElement('input');input.type='text';input.autocomplete='off';input.autocapitalize='off';input.autocorrect='off';input.spellcheck=false;input.dataset.wordIndex=String(wordIndex);input.setAttribute('aria-label',(wordIndex+1)+'つ目の単語の続き');input.placeholder='続き';input.disabled=matchSpellLocked;
+   input.addEventListener('input',()=>{input.value=input.value.replace(/[^a-z]/gi,'');});
+   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!matchSpellLocked)matchSpellCheckAnswer();});
+   field.append(input);wrap.append(prefix,field);host.append(wrap);wordIndex++;
+  }else{
+   const symbol=document.createElement('span');symbol.className='spell-symbol';symbol.textContent=part;host.append(symbol);
   }
-  return ch;
- }).join('');
- el('matchSpellFirst').textContent=pattern;
+ });
 }
 function matchSpellRevealNext(){
  if(matchSpellLocked)return;
  const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
+ const inputs=[...el('matchSpellWordInputs').querySelectorAll('input')];
+ let offset=0;
+ for(const input of inputs){
+  const token=word.match(/[a-z]+|[^a-z]+/gi).filter(x=>/^[a-z]+$/i.test(x))[Number(input.dataset.wordIndex)];
+  const revealed=input.value.length;
+  if(revealed<token.length-1){
+   input.value+=token[revealed+1];input.focus();break;
+  }
+ }
  const total=matchSpellLetters(word).length;
- if(matchSpellHints>=total-1)return;
- matchSpellHints++;
- matchSpellRenderPattern(word);
- if(matchSpellHints>=total-1)el('matchSpellHint').disabled=true;
- el('matchSpellNote').textContent='ヒント：次のアルファベットを表示したよ。空白・記号はそのままでOK。';
+ const revealedTotal=inputs.reduce((n,x)=>n+x.value.length,0);
+ if(revealedTotal>=total-inputs.length)el('matchSpellHint').disabled=true;
+ el('matchSpellNote').textContent='ヒント：次の文字を入力欄に表示したよ。';
 }
 function matchSpellLock(message,good){
  matchSpellLocked=true;el('matchSpellInput').disabled=true;
@@ -496,10 +509,12 @@ function matchSpellLock(message,good){
 function matchSpellCheckAnswer(){
  if(matchSpellLocked)return;
  const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
- const typed=matchSpellLetters(el('matchSpellInput').value);
- const expected=matchSpellLetters(word).slice(1+matchSpellHints);
- if(!typed){el('matchSpellFeedback').textContent='残りのスペルを入力しよう。';el('matchSpellFeedback').className='match-feedback bad';return;}
- if(typed===expected){matchSpellCorrect++;matchSpellLock('正解！ '+word,true);}
+ const typed=[...el('matchSpellWordInputs').querySelectorAll('input')].map(x=>x.value).join('');
+ const expected=matchSpellLetters(word).slice(matchSpellLetters(word).length-[...el('matchSpellWordInputs').querySelectorAll('input')].reduce((n,x)=>n+x.value.length,0));
+ if(!typed){el('matchSpellFeedback').textContent='各単語の入力欄に続きを入力しよう。';el('matchSpellFeedback').className='match-feedback bad';return;}
+ const full=[...el('matchSpellWordInputs').querySelectorAll('input')].map((x)=>x.value);
+ const expectedParts=(word.match(/[a-z]+/gi)||[]).map(x=>x.slice(1));
+ if(full.length===expectedParts.length&&full.every((v,i)=>v.toLowerCase()===expectedParts[i].toLowerCase())){matchSpellCorrect++;matchSpellLock('正解！ '+word,true);}
  else{el('matchSpellFeedback').textContent='惜しい！スペルを確認してもう一度。';el('matchSpellFeedback').className='match-feedback bad';}
 }
 function matchSpellShowAnswer(){
@@ -512,7 +527,7 @@ function matchSpellNextQuestion(){
  matchSpellIndex++;
  if(matchSpellIndex>=matchSpellOrder.length){
   el('matchSpellBar').style.width='100%';el('matchSpellMeaning').hidden=true;el('matchSpellFirst').parentElement.hidden=true;
-  el('matchSpellInput').hidden=true;el('matchSpellFeedback').hidden=true;el('matchSpellCheck').hidden=true;el('matchSpellHint').hidden=true;el('matchSpellAnswer').hidden=true;el('matchSpellNext').hidden=true;
+  el('matchSpellWordInputs').hidden=true;el('matchSpellFeedback').hidden=true;el('matchSpellCheck').hidden=true;el('matchSpellHint').hidden=true;el('matchSpellAnswer').hidden=true;el('matchSpellNext').hidden=true;
   el('matchSpellCount').textContent='終了';
   el('matchSpellResult').textContent='10問中 '+matchSpellCorrect+'問正解！';
   el('matchSpellFinish').hidden=false;
@@ -543,7 +558,7 @@ el('matchSpellAnswer').addEventListener('click',matchSpellShowAnswer);
 el('matchSpellNext').addEventListener('click',matchSpellNextQuestion);
 el('matchSpellRestart').addEventListener('click',matchSpellStart);
 el('matchSpellAgain').addEventListener('click',matchSpellStart);
-el('matchSpellInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!matchSpellLocked)matchSpellCheckAnswer();});
+
 el('homeQuiz3').addEventListener('click',matchOpen);
 el('matchHome').addEventListener('click',matchClose);
 el('matchResultHome').addEventListener('click',matchClose);
