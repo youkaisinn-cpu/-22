@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>イタリア語作文 スワイプゲーム</title>
+<style>
+:root{color-scheme:light;--bg:#f4f5f8;--card:#fff;--ink:#202433;--muted:#697386;--line:#dce1ea;--accent:#4f61d8;--accent-soft:#edf0ff;--good:#16834b;--bad:#bd3c3c;--shadow:0 8px 28px #26324a12}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+main{width:min(760px,100%);margin:0 auto;padding:22px 16px 42px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}h1{font-size:clamp(21px,4vw,28px);margin:0}.sub{color:var(--muted);font-size:13px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
+.topline{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;font-size:14px;color:var(--muted);font-weight:650}
+.progress{height:8px;background:#e9ecf3;border-radius:99px;overflow:hidden}.bar{height:100%;background:var(--accent);width:0;transition:width .2s}
+.prompt{font-size:clamp(20px,4vw,25px);font-weight:750;margin:7px 0 2px}.instructions{font-size:13px;color:var(--muted)}
+.zone{min-height:94px;border:2px dashed #cbd2e2;border-radius:12px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;background:#fbfcff}
+.words{display:flex;flex-wrap:wrap;gap:8px;min-height:48px}
+.word{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;font-size:16px;font-weight:650;color:var(--ink);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.word:active{cursor:grabbing}.word.placed{background:var(--accent-soft);border-color:#aeb8ff;color:#293aa8}.word.dragging{opacity:.45}
+.empty{color:#9aa3b3;font-size:14px;padding:7px}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:white}.btn:disabled{opacity:.42;cursor:not-allowed}.btn.grow{flex:1}
+.feedback{min-height:26px;font-weight:700;margin:12px 2px 2px}.good{color:var(--good)}.bad{color:var(--bad)}.answer{background:#f2fbf5;border:1px solid #c5e8d1;border-radius:11px;padding:12px;margin-top:10px;display:none}.answer strong{display:block;margin-bottom:3px}
+footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin-top:18px}
+#finish{display:none;text-align:center;padding:25px 16px}#finish h2{margin:0 0 8px}
+@media(max-width:480px){main{padding:15px 12px 30px}.panel{padding:13px}.word{font-size:15px;padding:9px 10px}.controls .btn{flex:1}}
+</style>
+</head>
+<body>
+<main>
+<header><div><h1>イタリア語作文ゲーム</h1><div class="sub">日本語を見て、単語を正しい順番に並べよう</div></div><div class="sub" id="score">正解 0 / 27</div></header>
+<section id="game">
+  <div class="topline"><span id="chapter">練習 5.1</span><span id="counter">第1問 / 27問</span></div>
+  <div class="progress"><div class="bar" id="progress"></div></div>
+  <section class="panel"><div class="sub">日本語</div><div class="prompt" id="prompt"></div><div class="instructions">下の単語カードをタップ、または回答スペースへドラッグ。</div></section>
+  <section class="panel"><div class="topline"><span>回答スペース</span><span class="sub">置いた単語をタップすると戻せる</span></div><div class="zone" id="zone"><span class="empty">ここに単語を並べよう</span></div></section>
+  <section class="panel"><div class="topline"><span>単語カード</span><span class="sub">順番は毎回シャッフル</span></div><div class="words" id="bank"></div>
+    <div class="controls"><button class="btn primary grow" id="check">答え合わせ</button><button class="btn" id="hint">ヒント</button><button class="btn" id="reset">やり直す</button></div>
+    <div class="feedback" id="feedback" aria-live="polite">まずは単語を並べてみよう。</div>
+    <div class="answer" id="answer"><strong>正解</strong><span id="answerText"></span></div>
+    <div class="controls"><button class="btn primary grow" id="next" hidden>次の問題へ →</button></div>
+  </section>
+</section>
+<section class="panel" id="finish"><h2>全問終了！</h2><p id="result"></p><button class="btn primary" id="again">最初から挑戦する</button></section>
+<footer><span>収録：練習 5.1〜6.5 の作文27問</span><span>オフライン動作対応</span></footer>
+</main>
+<script>
+(()=>{
+'use strict';
+const questions=[
+['5.1','私はバレーボールが好きです。','Mi piace la pallavolo.'],
+['5.1','コーヒー好きですか？ — いいえ、あまり好きじゃないです。','Ti piace il caffè? — No, non mi piace molto.'],
+['5.1','私は紅茶が大好きですが、シルビアはあまり好きじゃないです。','Mi piace molto il tè, ma a Silvia non piace molto.'],
+['5.2','私はトマトが大好きです。','Mi piacciono molto i pomodori.'],
+['5.2','ナスは好きですか？ — いいえ、あまり好きじゃないです。','Ti piacciono le melanzane? — No, non mi piacciono molto.'],
+['5.2','フランチェスカはスパゲッティがあまり好きではないです。','A Francesca non piacciono molto gli spaghetti.'],
+['5.3','私は勉強するのが好きです。アンナは勉強するのが好きじゃないです。','Mi piace studiare. Ad Anna non piace studiare.'],
+['5.3','フランチェスコは野球をするのは好きですが、勉強するのは好きじゃないです。','A Francesco piace giocare a baseball, ma non gli piace studiare.'],
+['5.3','イタリア語を勉強するのは好きですか？ — はい、とても。',"Ti piace studiare l'italiano? — Sì, molto."],
+['5.4','このチーズ知ってますか？ — はい、とてもおいしいです。','Conosci questo formaggio? — Sì, è molto buono.'],
+['5.4','このハムは知りません。どんなですか？ — あまりおいしくないです。',"Non conosco questo prosciutto. Com'è? — Non è molto buono."],
+['6.2','ふだん何時に起きますか？ — 7時半に起きます。','A che ora ti alzi di solito? — Mi alzo alle sette e mezza.'],
+['6.2','私はふだん7時に起きますが、明日は5時に起きます。','Di solito mi alzo alle sette, ma domani mi alzo alle cinque.'],
+['6.2','私はいつも10時に起きます。','Mi alzo sempre alle dieci.'],
+['6.2','アントニオはいつも8時に起きます。','Antonio si alza sempre alle otto.'],
+['6.3','どこに行くの？ — シルビアの家に行きます。','Dove vai? — Vado da Silvia.'],
+['6.3','私は7時に仕事に行きます。','Vado al lavoro alle sette.'],
+['6.3','ラウラは学校に行きます。マルコは仕事に行きます。','Laura va a scuola. Marco va al lavoro.'],
+['6.3','アントネッラはふだん6時に起きて7時に学校に行きます。','Antonella di solito si alza alle sei e va a scuola alle sette.'],
+['6.4','私は市場にトマトを買いに行きます。','Vado al mercato a comprare i pomodori.'],
+['6.4','私はアイスを食べに行きます。 — 私も！','Vado a mangiare un gelato. — Anch’io!'],
+['6.4','ジョバンニは図書館に勉強しに行きます。','Giovanni va in biblioteca a studiare.'],
+['6.4','バールにケーキを食べに行こうか？','Andiamo al bar a mangiare una torta?'],
+['6.5','いつもどうやって学校に来ているの？ — 車で来ます。','Come vieni a scuola? — Vengo in macchina.'],
+['6.5','ビール飲みに行くけど、あなたも来る？ — 私も行きます。','Vado a bere una birra, vieni anche tu? — Sì, vengo anch’io.'],
+['6.5','私はローマに列車で行きます。','Vado a Roma in treno.'],
+['6.5','大学に歩いて来ているんですか？ — いいえ、スクーターで来ています。','Vieni all’università a piedi? — No, vengo in motorino.']
+];
+const el=id=>document.getElementById(id);let index=0,score=0,placed=[],bank=[],locked=false,dragId=null,dragStart=null;
+const tokens=()=>questions[index][2].split(/\s+/);
+const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+function render(){
+ const z=el('zone'),b=el('bank');z.innerHTML='';b.innerHTML='';
+ if(!placed.length){const p=document.createElement('span');p.className='empty';p.textContent='ここに単語を並べよう';z.append(p);}
+ placed.forEach((w,i)=>{const x=makeWord(w,true);x.addEventListener('click',()=>{if(locked)return;placed.splice(i,1);bank.push(w);render();});z.append(x);});
+ bank.forEach(w=>b.append(makeWord(w,false)));
+ el('score').textContent=`正解 ${score} / ${questions.length}`;
+}
+function makeWord(w,isPlaced){const x=document.createElement('button');x.type='button';x.className='word'+(isPlaced?' placed':'');x.textContent=w.text;x.draggable=false;x.addEventListener('pointerdown',e=>{if(locked)return;dragId=w.id;dragStart={x:e.clientX,y:e.clientY,from:isPlaced};x.setPointerCapture?.(e.pointerId);});x.addEventListener('pointerup',e=>{if(dragId!==w.id)return;const target=document.elementFromPoint(e.clientX,e.clientY);if(isPlaced){if(target===x||x.contains(target)){}else{const k=placed.findIndex(a=>a.id===w.id);if(k>=0){placed.splice(k,1);bank.push(w);}}}else{const rect=el('zone').getBoundingClientRect();const dropped=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;const moved=Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)>8;if(dropped||!moved){const k=bank.findIndex(a=>a.id===w.id);if(k>=0){bank.splice(k,1);placed.push(w);}}}dragId=null;dragStart=null;render();});return x;}
+function start(){locked=false;placed=[];bank=shuffle(tokens().map((text,id)=>({id,text})));el('chapter').textContent='練習 '+questions[index][0];el('counter').textContent=`第${index+1}問 / ${questions.length}問`;el('prompt').textContent=questions[index][1];el('progress').style.width=(index/questions.length*100)+'%';el('feedback').textContent='まずは単語を並べてみよう。';el('feedback').className='feedback';el('answer').style.display='none';el('next').hidden=true;el('check').disabled=false;el('hint').disabled=false;el('reset').disabled=false;render();}
+function check(){if(locked)return;if(placed.length!==tokens().length){message('まだ単語が残っているよ。','bad');return;}const ok=placed.every((w,i)=>w.text===tokens()[i]);if(!ok){message('惜しい！語順をもう一度確認してみよう。','bad');return;}locked=true;score++;message('正解！ Perfetto!','good');el('answerText').textContent=questions[index][2];el('answer').style.display='block';el('check').disabled=true;el('hint').disabled=true;el('reset').disabled=true;el('next').hidden=false;el('next').textContent=index===questions.length-1?'結果を見る →':'次の問題へ →';render();}
+function message(t,c){el('feedback').textContent=t;el('feedback').className='feedback '+c;}
+function hint(){if(locked||bank.length===0)return;const expected=tokens()[placed.length];const k=bank.findIndex(w=>w.text===expected);if(k>=0){placed.push(bank.splice(k,1)[0]);message('ヒント：次の単語を置いたよ。','');render();}}
+function reset(){if(locked)return;placed=[];bank=shuffle(tokens().map((text,id)=>({id,text})));message('並べ直そう。','');render();}
+function next(){if(!locked)return;if(index===questions.length-1){el('game').style.display='none';el('finish').style.display='block';el('result').textContent=`正解数：${score} / ${questions.length}`;el('progress').style.width='100%';return;}index++;start();}
+function again(){index=0;score=0;el('finish').style.display='none';el('game').style.display='block';start();}
+el('check').addEventListener('click',check);el('hint').addEventListener('click',hint);el('reset').addEventListener('click',reset);el('next').addEventListener('click',next);el('again').addEventListener('click',again);start();
+})();
+</script>
+</body>
+</html>
