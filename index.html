@@ -429,7 +429,7 @@ function matchSpellStart(){
 }
 function matchSpellShow(){
  const i=matchSpellOrder[matchSpellIndex],word=matchPairs[i][0];
- matchSpellHints=0;matchSpellLocked=false;
+ matchSpellHints=0;matchSpellLocked=false;el('matchSpellHint').disabled=false;
  el('matchSpellCount').textContent=(matchSpellIndex+1)+' / '+matchSpellOrder.length;
  el('matchSpellBar').style.width=(matchSpellIndex/matchSpellOrder.length*100)+'%';
  el('matchSpellMeaning').textContent=matchPairs[i][1];
@@ -501,7 +501,7 @@ function matchSpellRevealNext(){
  el('matchSpellNote').textContent='ヒント：次の文字を入力欄に表示したよ。';
 }
 function matchSpellLock(message,good){
- matchSpellLocked=true;el('matchSpellInput').disabled=true;
+ matchSpellLocked=true;el('matchSpellWordInputs').querySelectorAll('input').forEach(x=>x.disabled=true);
  el('matchSpellFeedback').textContent=message;el('matchSpellFeedback').className='match-feedback '+(good?'good':'bad');
  el('matchSpellCheck').hidden=true;el('matchSpellHint').hidden=true;el('matchSpellAnswer').hidden=true;el('matchSpellNext').hidden=false;
  el('matchSpellNext').textContent=matchSpellIndex===matchSpellOrder.length-1?'結果を見る →':'次へ →';
@@ -509,10 +509,8 @@ function matchSpellLock(message,good){
 function matchSpellCheckAnswer(){
  if(matchSpellLocked)return;
  const word=matchPairs[matchSpellOrder[matchSpellIndex]][0];
- const typed=[...el('matchSpellWordInputs').querySelectorAll('input')].map(x=>x.value).join('');
- const expected=matchSpellLetters(word).slice(matchSpellLetters(word).length-[...el('matchSpellWordInputs').querySelectorAll('input')].reduce((n,x)=>n+x.value.length,0));
- if(!typed){el('matchSpellFeedback').textContent='各単語の入力欄に続きを入力しよう。';el('matchSpellFeedback').className='match-feedback bad';return;}
- const full=[...el('matchSpellWordInputs').querySelectorAll('input')].map((x)=>x.value);
+ const full=[...el('matchSpellWordInputs').querySelectorAll('input')].map(x=>x.value);
+ if(full.every(x=>!x)){el('matchSpellFeedback').textContent='各単語の入力欄に続きを入力しよう。';el('matchSpellFeedback').className='match-feedback bad';return;}
  const expectedParts=(word.match(/[a-z]+/gi)||[]).map(x=>x.slice(1));
  if(full.length===expectedParts.length&&full.every((v,i)=>v.toLowerCase()===expectedParts[i].toLowerCase())){matchSpellCorrect++;matchSpellLock('正解！ '+word,true);}
  else{el('matchSpellFeedback').textContent='惜しい！スペルを確認してもう一度。';el('matchSpellFeedback').className='match-feedback bad';}
