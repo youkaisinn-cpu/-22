@@ -23,7 +23,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;ma
 .feedback{min-height:26px;font-weight:700;margin:12px 2px 2px}.good{color:var(--good)}.bad{color:var(--bad)}.answer{background:#f2fbf5;border:1px solid #c5e8d1;border-radius:11px;padding:12px;margin-top:10px;display:none}.answer strong{display:block;margin-bottom:3px}
 [hidden]{display:none!important}
 .hdr-r{display:flex;align-items:center;gap:10px}.btn.small{padding:6px 10px;font-size:13px}
-.reviewing #game,.reviewing #finish,.spelling #game,.spelling #finish,.memoing #game,.memoing #finish{display:none!important}
+.reviewing #game,.reviewing #finish,.spelling #game,.spelling #finish,.memoing #game,.memoing #finish,.recalling #game,.recalling #finish{display:none!important}
 .gloss span{flex:1}.star{border:0;background:none;cursor:pointer;font-size:22px;line-height:1;color:#b8bfcc;padding:0 4px}.star.on{color:#e0a100}
 .speakrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}.speakrow label{display:flex;align-items:center;gap:5px;cursor:pointer}
 .pen{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;color:var(--muted);padding:0 4px}
@@ -118,7 +118,7 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
 </div>
 
 <main>
-<header><div><h1>イタリア語作文ゲーム</h1><div class="sub">日本語を見て、単語を正しい順番に並べよう</div></div><div class="hdr-r"><button class="btn small" id="backHome" type="button">⌂ ホーム</button><div class="sub" id="score">正解 0 / 27</div><button class="btn small" id="memoBtn" type="button">📝 テストメモ</button><button class="btn small" id="reviewBtn" type="button">★ 復習 0</button></div></header>
+<header><div><h1>イタリア語作文ゲーム</h1><div class="sub">日本語を見て、単語を正しい順番に並べよう</div></div><div class="hdr-r"><button class="btn small" id="backHome" type="button">⌂ ホーム</button><div class="sub" id="score">正解 0 / 43</div><button class="btn small" id="memoBtn" type="button">📝 テストメモ</button><button class="btn small" id="reviewBtn" type="button">★ 復習 0</button></div></header>
 <section class="panel" id="testMemo" hidden><div class="topline"><span>📝 テストメモ</span><span class="sub">この端末に保存</span></div><div class="instructions">テストに出る内容や覚えておきたいことを記録できます。</div><textarea id="testMemoText" rows="5" style="width:100%;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical" aria-label="テストメモ"></textarea><div class="controls"><button class="btn primary grow" id="memoSave" type="button">保存</button><button class="btn" id="memoClose" type="button">閉じる</button></div><div class="sub" id="memoStatus" aria-live="polite"></div></section>
 <section class="panel" id="review" hidden><div class="topline"><span>★ 復習リスト</span></div><div id="reviewList"></div><div class="controls"><button class="btn primary grow" id="reviewSpell" type="button">✍ スペル練習</button><button class="btn" id="reviewClose" type="button">閉じる</button><button class="btn warn" id="reviewClear" type="button">すべて削除</button></div></section>
 <section class="panel" id="spell" hidden>
@@ -186,6 +186,8 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
   </section>
 </section>
 
+<section class="panel" id="unitControls"><div class="topline"><span>収録範囲</span><span class="sub">作文・意味確認</span></div><select id="unitSelect" class="btn" aria-label="収録範囲を選択"><option value="all">全範囲（5.1〜7.2）</option><option value="old">練習5.1〜6.5</option><option value="7">練習7.1〜7.2</option></select><div class="controls"><button class="btn primary grow" id="writingMode" type="button">日本語 → イタリア語</button><button class="btn grow" id="recallMode" type="button">イタリア語 → 意味確認</button></div></section>
+<section id="recallPanel" class="panel" hidden><div class="topline"><span id="recallChapter">練習 7.1</span><span id="recallCount">1 / 16</span></div><div class="progress"><div class="bar" id="recallProgress"></div></div><div class="sub">イタリア語</div><div class="prompt" id="recallItalian"></div><div class="controls"><button class="btn primary grow" id="revealMeaning" type="button">日本語の答えを表示</button></div><div class="answer" id="recallAnswer"><strong>日本語の意味</strong><span id="recallJapanese"></span></div><div class="controls"><button class="btn grow" id="recallMissed" type="button">覚えていない</button><button class="btn primary grow" id="recallKnown" type="button">覚えた</button></div><div class="controls"><button class="btn" id="recallOnlyMissed" type="button">覚えていない問題だけ復習</button><button class="btn" id="recallExit" type="button">作文に戻る</button></div><div class="feedback" id="recallFeedback" aria-live="polite"></div></section>
 <section id="game">
   <div class="topline"><span id="chapter">練習 5.1</span><span id="counter">第1問 / 27問</span></div>
   <div class="progress"><div class="bar" id="progress"></div></div>
@@ -200,12 +202,12 @@ body.matching main>header,body.matching footer{display:none}\n#matchGame{max-wid
   </section>
 </section>
 <section class="panel" id="finish"><h2>全問終了！</h2><p id="result"></p><button class="btn primary" id="again">最初から挑戦する</button></section>
-<footer><span>収録：練習 5.1〜6.5 の作文27問</span><span>オフライン動作対応</span></footer>
+<footer><span>収録：練習 5.1〜7.2 の作文・意味確認43問</span><span>オフライン動作対応</span></footer>
 </main>
 <script>
 (()=>{
 'use strict';
-const questions=[
+let questions=[
 ['5.1','私はバレーボールが好きです。','Mi piace la pallavolo.'],
 ['5.1','コーヒー好きですか？ いいえ、あまり好きじゃないです。','Ti piace il caffè? No, non mi piace molto.'],
 ['5.1','私は紅茶が大好きですが、シルビアはあまり好きじゃないです。','Mi piace molto il tè, ma a Silvia non piace molto.'],
@@ -233,6 +235,24 @@ const questions=[
 ['6.5','ビール飲みに行くけど、あなたも来る？ 私も行きます。','Vado a bere una birra, vieni anche tu? Sì, vengo anch’io.'],
 ['6.5','私はローマに列車で行きます。','Vado a Roma in treno.'],
 ['6.5','大学に歩いて来ているんですか？ いいえ、スクーターで来ています。','Vieni all’università a piedi? No, vengo in motorino.']
+,
+
+['7.1','私は踊れませんが、歌うのは好きです。','Non so ballare ma mi piace cantare.'],
+['7.1','料理できますか？ — はい、ちょっとだけ。',"Sai cucinare? — Sì, un po'."],
+['7.1','あなたも中国語を話せますか？ — はい、まあまあ上手です。','Anche tu sai parlare il cinese? — Sì, abbastanza bene.'],
+['7.1','私の父は料理がとても上手です。','Mio padre sa cucinare molto bene.'],
+['7.1','私の弟はギターが上手です。','Mio fratello sa suonare bene la chitarra.'],
+['7.1','運転できますか？ — いいえ。','Sai guidare? — No.'],
+['7.1','あなたも運転できないんですか？','Anche tu non sai guidare?'],
+['7.1','私は料理がとても上手です。','So cucinare molto bene.'],
+['7.2','何が飲みたいですか？コーヒーですか、それとも紅茶ですか？ — コーヒー。','Che cosa vuoi bere? Un caffè o un tè? — Un caffè.'],
+['7.2','パオラは父親のために本を一冊買いたいです。','Paola vuole comprare un libro per il padre.'],
+['7.2','何が買いたいですか？ — マリアのためにCDを一枚買いたいです。','Che cosa vuoi comprare? — Voglio comprare un CD per Maria.'],
+['7.2','パオロはオーストリアへスキーをしに行きたいです。','Paolo vuole andare a sciare in Austria.'],
+['7.2','何を食べたいですか？ピザ？パニーノ？ — ピザ。','Che cosa vuoi mangiare? Una pizza o un panino? — Una pizza.'],
+['7.2','ラウラはグラッパ（una grappa）を飲みたいです。','Laura vuole bere una grappa.'],
+['7.2','イタリアで靴を一足買いたいです。','Voglio comprare un paio di scarpe in Italia.'],
+['7.2','妹のためにTシャツを買いたいです.','Voglio comprare una maglietta per mia sorella.']
 ];
 const GLOSS={
 "mi":"私に／私を（再帰）","ti":"あなたに／あなたを（再帰）","si":"彼・彼女自身を（再帰）","gli":"定冠詞（男性複数）",
@@ -252,6 +272,7 @@ const GLOSS={
 "pasta":"パスタ","come":"どうやって","vieni":"来る（あなた）","vengo":"来る（私）","macchina":"車","bere":"飲む","birra":"ビール","anche":"〜も","tu":"あなた",
 "roma":"ローマ","treno":"列車","all'università":"大学に（a + l'）","piedi":"足（a piedi ＝ 徒歩で）","motorino":"スクーター"
 };
+const allQuestions=questions.slice();
 let review={};try{review=JSON.parse(localStorage.getItem('itaReview')||'{}')||{};}catch(e){review={};}
 const el=id=>document.getElementById(id);let index=0,score=0,gaveUp=0,skipped=0,placed=[],bank=[],locked=false,dragId=null,dragStart=null;
 const tokens=()=>questions[index][2].split(/\s+/);
@@ -356,6 +377,26 @@ el('memoBtn').addEventListener('click',()=>{if(el('testMemo').hidden)openTestMem
 el('memoClose').addEventListener('click',closeTestMemo);
 el('memoSave').addEventListener('click',()=>{try{localStorage.setItem('itaTestMemo',el('testMemoText').value);el('memoStatus').textContent='保存しました。';}catch(e){el('memoStatus').textContent='保存できませんでした。';}});
 updateReviewCount();start();
+
+// 範囲切替・イタリア語から意味を思い出すモード
+let currentRange='all',currentMode='writing',recallQueue=[],recallIndex=0,recallRevealed=false,recallMissedOnly=false;
+let recallRatings={};try{recallRatings=JSON.parse(localStorage.getItem('itaRecallRatings')||'{}')||{};}catch(e){recallRatings={};}
+function questionsForRange(){return allQuestions.filter(q=>currentRange==='old'?Number(q[0])<7:currentRange==='7'?Number(q[0])>=7:true);}
+function applyRange(){questions=questionsForRange();index=0;score=0;gaveUp=0;skipped=0;el('finish').style.display='none';el('game').style.display='block';start();if(currentMode==='recall')startRecall(false);}
+function setMode(mode){currentMode=mode;const recall=mode==='recall';document.body.classList.toggle('recalling',recall);el('recallPanel').hidden=!recall;el('game').hidden=recall;el('finish').style.display='none';el('writingMode').classList.toggle('primary',!recall);el('recallMode').classList.toggle('primary',recall);if(recall)startRecall(false);else{recallQueue=[];}}
+function startRecall(missedOnly){recallMissedOnly=!!missedOnly;const source=questionsForRange();recallQueue=source.filter(q=>!recallMissedOnly||recallRatings[q[2]]==='missed');recallQueue=shuffle(recallQueue);recallIndex=0;showRecall();}
+function showRecall(){const q=recallQueue[recallIndex];if(!q){el('recallItalian').textContent=recallMissedOnly?'復習する問題はありません。':'この範囲の問題はありません。';el('recallChapter').textContent='完了';el('recallCount').textContent='0 / 0';el('recallProgress').style.width='100%';el('recallAnswer').style.display='none';el('revealMeaning').disabled=true;el('recallKnown').disabled=true;el('recallMissed').disabled=true;return;}el('recallChapter').textContent='練習 '+q[0];el('recallCount').textContent=(recallIndex+1)+' / '+recallQueue.length;el('recallProgress').style.width=(recallIndex/recallQueue.length*100)+'%';el('recallItalian').textContent=q[2];el('recallJapanese').textContent=q[1];el('recallAnswer').style.display='none';el('revealMeaning').disabled=false;el('recallKnown').disabled=true;el('recallMissed').disabled=true;recallRevealed=false;el('recallFeedback').textContent='意味を思い出してから答えを表示しよう。';}
+function revealRecall(){if(!recallQueue[recallIndex])return;recallRevealed=true;el('recallAnswer').style.display='block';el('recallKnown').disabled=false;el('recallMissed').disabled=false;el('revealMeaning').disabled=true;}
+function rateRecall(rating){if(!recallRevealed||!recallQueue[recallIndex])return;recallRatings[recallQueue[recallIndex][2]]=rating;try{localStorage.setItem('itaRecallRatings',JSON.stringify(recallRatings));}catch(e){}recallIndex++;showRecall();}
+el('unitSelect').addEventListener('change',()=>{currentRange=el('unitSelect').value;applyRange();});
+el('writingMode').addEventListener('click',()=>setMode('writing'));
+el('recallMode').addEventListener('click',()=>setMode('recall'));
+el('revealMeaning').addEventListener('click',revealRecall);
+el('recallKnown').addEventListener('click',()=>rateRecall('known'));
+el('recallMissed').addEventListener('click',()=>rateRecall('missed'));
+el('recallOnlyMissed').addEventListener('click',()=>startRecall(true));
+el('recallExit').addEventListener('click',()=>setMode('writing'));
+
 
 /* 小テスト③：英語・日本語マッチング */
 const matchPairs=[
