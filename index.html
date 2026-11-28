@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f8">
-<title>イタリア語作文 スワイプゲーム</title>
+<title>ゲームライブラリ | イタリア語作文・英語 小テスト③</title>
 <style>
 :root{color-scheme:light;--bg:#f4f5f8;--card:#fff;--ink:#202433;--muted:#697386;--line:#dce1ea;--accent:#4f61d8;--accent-soft:#edf0ff;--good:#16834b;--bad:#bd3c3c;--shadow:0 8px 28px #26324a12}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
@@ -63,7 +63,8 @@ footer{display:flex;justify-content:space-between;gap:12px;color:var(--muted);fo
 #matchSpellPanel .spellrow input{font-size:20px}.spell-words{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 10px;align-items:flex-end}.spell-word{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:8px 10px;min-width:0}.spell-word .prefix{font-size:21px;font-weight:800;color:#293aa8;background:var(--accent-soft);border-radius:7px;padding:4px 7px}.spell-word input{width:clamp(76px,22vw,150px);min-width:0;border:0;border-bottom:2px solid var(--line);border-radius:0;padding:7px 4px;font:700 20px system-ui;color:var(--ink);background:transparent;outline:none}.spell-word input:focus{border-color:var(--accent)}.spell-symbol{font-size:21px;font-weight:750;white-space:pre-wrap}.spell-word small{display:block;color:var(--muted);font-size:10px;text-align:center}
 #matchSpellFinish{text-align:center;padding:18px 8px}
 /* 小テスト③ マッチングゲーム */
-body.matching main>header,body.matching footer{display:none}\n#matchGame{max-width:760px;margin:0 auto;padding:18px 16px 36px}
+body.matching main>header,body.matching footer{display:none}
+#matchGame{max-width:760px;margin:0 auto;padding:18px 16px 36px}
 .match-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .match-title{font-size:clamp(22px,4vw,28px);font-weight:850;margin:0}
 .match-stats{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px}
@@ -270,7 +271,13 @@ const GLOSS={
 "antonella":"アントネッラ（人名）","sei":"6","mercato":"市場","comprare":"買う","mangiare":"食べる","gelato":"アイス・ジェラート","anch'io":"私も",
 "giovanni":"ジョバンニ（人名）","in":"〜で・〜に（in macchina ＝ 車で）","biblioteca":"図書館","andiamo":"行こう・行く（私たち）","bar":"バール（カフェ）",
 "pasta":"パスタ","come":"どうやって","vieni":"来る（あなた）","vengo":"来る（私）","macchina":"車","bere":"飲む","birra":"ビール","anche":"〜も","tu":"あなた",
-"roma":"ローマ","treno":"列車","all'università":"大学に（a + l'）","piedi":"足（a piedi ＝ 徒歩で）","motorino":"スクーター"
+"roma":"ローマ","treno":"列車","all'università":"大学に（a + l'）","piedi":"足（a piedi ＝ 徒歩で）","motorino":"スクーター",
+"so":"できる・知っている（私）","ballare":"踊る","cantare":"歌う","sai":"できる・知っている（あなた）","cucinare":"料理する","po'":"少し（un po' ＝ ちょっと）",
+"parlare":"話す","cinese":"中国語","abbastanza":"かなり・まあまあ","bene":"上手に・よく","mio":"私の（男性単数）","padre":"父","sa":"できる・知っている（彼・彼女）",
+"fratello":"弟・兄","suonare":"演奏する・弾く","chitarra":"ギター","guidare":"運転する","cosa":"何（che cosa ＝ 何）","vuoi":"〜したい（あなた）","o":"または・それとも",
+"paola":"パオラ（人名）","vuole":"〜したい（彼・彼女）","libro":"本","per":"〜のために","paolo":"パオロ（人名）","andare":"行く","sciare":"スキーをする",
+"austria":"オーストリア","voglio":"〜したい（私）","cd":"CD","maria":"マリア（人名）","pizza":"ピザ","panino":"パニーノ（サンドイッチ）",
+"grappa":"グラッパ（蒸留酒）","paio":"1足・1組（un paio di ＝ 1足の）","scarpe":"靴（複数）","italia":"イタリア","mia":"私の（女性単数）","sorella":"妹・姉","maglietta":"Tシャツ"
 };
 const allQuestions=questions.slice();
 let review={};try{review=JSON.parse(localStorage.getItem('itaReview')||'{}')||{};}catch(e){review={};}
@@ -407,12 +414,21 @@ const matchPairs=[
  ['register','登録する、～を登録させる'],
  ['postpone ~ to ---','～を･･･まで延期する'],
  ['place an order for ~','～を注文する'],
- ['be stuck in a traffic jam','交通渋滞に嵌る'],
+ ['be stuck in a traffic jam','交通渋滞にはまる'],
  ['express','急ぎの、急行の、速達の'],
  ['fill out the form','用紙に全部を記入する']
 ];
 let matchEnglishOrder=[],matchJapaneseOrder=[],matchSelectedEnglish=null,matchSelectedJapanese=null,matchFound=new Set(),matchTries=0,matchWrongTimer=null;
 const matchShuffleArray=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+function matchShuffleOnly(){
+ if(matchWrongTimer){clearTimeout(matchWrongTimer);matchWrongTimer=null;}
+ matchSelectedEnglish=null;matchSelectedJapanese=null;
+ matchEnglishOrder=matchShuffleArray(matchEnglishOrder);
+ matchJapaneseOrder=matchShuffleArray(matchJapaneseOrder);
+ el('matchFeedback').textContent='カードを並び替えたよ。続きから選ぼう。';
+ el('matchFeedback').className='match-feedback';
+ matchRender();
+}
 function matchStart(){
  if(matchWrongTimer){clearTimeout(matchWrongTimer);matchWrongTimer=null;}
  matchFound=new Set();matchSelectedEnglish=null;matchSelectedJapanese=null;matchTries=0;
@@ -463,7 +479,7 @@ function matchChoose(i,side){
 let matchSpellOrder=[],matchSpellIndex=0,matchSpellHints=0,matchSpellLocked=false,matchSpellCorrect=0;
 function matchSpellStart(){
  matchSpellOrder=matchShuffleArray(matchPairs.map((_,i)=>i));matchSpellIndex=0;matchSpellHints=0;matchSpellLocked=false;matchSpellCorrect=0;
- el('matchSpellFinish').hidden=true;el('matchSpellMeaning').hidden=false;el('matchSpellFirst').parentElement.hidden=false;
+ el('matchSpellFinish').hidden=true;el('matchSpellMeaning').hidden=false;
  el('matchSpellWordInputs').hidden=false;el('matchSpellFeedback').hidden=false;el('matchSpellNote').textContent='';
  el('matchSpellCheck').hidden=false;el('matchSpellHint').hidden=false;el('matchSpellAnswer').hidden=false;el('matchSpellNext').hidden=true;
  matchSpellShow();
@@ -517,7 +533,7 @@ function matchSpellRenderWordInputs(word){
    const field=document.createElement('div');
    const input=document.createElement('input');input.type='text';input.autocomplete='off';input.autocapitalize='off';input.autocorrect='off';input.spellcheck=false;input.dataset.wordIndex=String(wordIndex);input.setAttribute('aria-label',(wordIndex+1)+'つ目の単語の続き');input.placeholder='続き';input.disabled=matchSpellLocked;
    input.addEventListener('input',()=>{input.value=input.value.replace(/[^a-z]/gi,'');});
-   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!matchSpellLocked)matchSpellCheckAnswer();});
+   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();matchSpellLocked?matchSpellNextQuestion():matchSpellCheckAnswer();}});
    field.append(input);wrap.append(prefix,field);host.append(wrap);wordIndex++;
   }else{
    const symbol=document.createElement('span');symbol.className='spell-symbol';symbol.textContent=part;host.append(symbol);
@@ -565,7 +581,7 @@ function matchSpellNextQuestion(){
  if(!matchSpellLocked)return;
  matchSpellIndex++;
  if(matchSpellIndex>=matchSpellOrder.length){
-  el('matchSpellBar').style.width='100%';el('matchSpellMeaning').hidden=true;el('matchSpellFirst').parentElement.hidden=true;
+  el('matchSpellBar').style.width='100%';el('matchSpellMeaning').hidden=true;
   el('matchSpellWordInputs').hidden=true;el('matchSpellFeedback').hidden=true;el('matchSpellCheck').hidden=true;el('matchSpellHint').hidden=true;el('matchSpellAnswer').hidden=true;el('matchSpellNext').hidden=true;
   el('matchSpellCount').textContent='終了';
   el('matchSpellResult').textContent='10問中 '+matchSpellCorrect+'問正解！';
@@ -586,7 +602,7 @@ function matchOpen(){
  document.body.classList.remove('reviewing','spelling','memoing');matchStart();
 }
 function matchClose(){
- document.body.classList.remove('matching');el('matchGame').hidden=true;el('homeScreen').hidden=false;el('game').hidden=false;
+ document.body.classList.remove('matching');el('matchGame').hidden=true;el('homeScreen').hidden=false;el('game').hidden=(currentMode==='recall');
 }
 el('matchModePair').addEventListener('click',()=>matchSetMode('pair'));
 el('matchModeSpell').addEventListener('click',()=>matchSetMode('spell'));
@@ -602,7 +618,7 @@ el('homeQuiz3').addEventListener('click',matchOpen);
 el('matchHome').addEventListener('click',matchClose);
 el('matchResultHome').addEventListener('click',matchClose);
 el('matchReset').addEventListener('click',matchStart);
-el('matchShuffle').addEventListener('click',matchStart);
+el('matchShuffle').addEventListener('click',matchShuffleOnly);
 el('matchAgain').addEventListener('click',matchStart);
 
 el('homeItalian').addEventListener('click',()=>{el('homeScreen').hidden=true;});
